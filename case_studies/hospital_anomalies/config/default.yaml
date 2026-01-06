@@ -1,0 +1,65 @@
+# Hospital Anomalies Case Study Configuration
+
+# Dataset Configuration
+datasets:
+  - cihi_hospital_admissions
+  - cihi_bed_occupancy
+  - cihi_icu_utilization
+
+# Date Range for Analysis
+date_range:
+  start: "2019-01-01"
+  end: "2023-12-31"
+
+# Data Processing
+processing:
+  min_rows: 10
+  missing_threshold: 0.3  # Maximum allowed missing data ratio
+  outlier_std_threshold: 3.0
+
+# Feature Engineering
+features:
+  rolling_windows: [7, 14, 30]  # Days for rolling statistics
+  lag_features: [1, 7, 30]  # Lag periods for time-series features
+  seasonal_features: true  # Include month, quarter indicators
+
+# Model: Isolation Forest
+isolation_forest:
+  n_estimators: 100
+  max_samples: 256
+  contamination: 0.05  # Expected proportion of anomalies
+  random_state: 42
+  n_jobs: -1
+
+# Model: Autoencoder (optional)
+autoencoder:
+  enabled: false
+  encoding_dim: 16
+  hidden_layers: [32, 16]
+  epochs: 50
+  batch_size: 32
+  learning_rate: 0.001
+  validation_split: 0.2
+  random_state: 42
+
+# Evaluation
+evaluation:
+  top_k_anomalies: 20  # Number of top anomalies to report
+  persistence_window: 7  # Days to check for anomaly persistence
+  seasonality_check: true
+
+# Output
+output:
+  save_predictions: true
+  save_features: true
+  save_figures: true
+  figure_format: "png"
+  figure_dpi: 300
+
+# Paths (relative to project root)
+paths:
+  raw_data: "data/raw/cihi"
+  processed_data: "data/processed/cihi"
+  models: "case_studies/hospital_anomalies/reports/models"
+  figures: "case_studies/hospital_anomalies/reports/figures"
+  results: "case_studies/hospital_anomalies/reports/results"
