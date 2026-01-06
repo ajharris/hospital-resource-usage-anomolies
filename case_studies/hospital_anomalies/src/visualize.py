@@ -45,7 +45,7 @@ def plot_time_series_with_anomalies(
     ax.plot(df[date_col], df[value_col], label='Values', linewidth=1.5, alpha=0.7)
     
     # Highlight anomalies
-    anomalies = df[df[anomaly_col] == True]
+    anomalies = df[df[anomaly_col]]
     if len(anomalies) > 0:
         ax.scatter(
             anomalies[date_col],

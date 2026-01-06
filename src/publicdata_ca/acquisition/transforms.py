@@ -76,9 +76,9 @@ def fill_missing_numeric(
         elif method == 'median':
             df[col] = df[col].fillna(df[col].median())
         elif method == 'forward':
-            df[col] = df[col].fillna(method='ffill')
+            df[col] = df[col].ffill()
         elif method == 'backward':
-            df[col] = df[col].fillna(method='bfill')
+            df[col] = df[col].bfill()
     
     return df
 

@@ -50,6 +50,7 @@ class IsolationForestDetector:
             n_jobs=n_jobs
         )
         self.feature_columns_ = None
+        self.feature_means_ = None  # Store means for consistent imputation
         self.is_fitted_ = False
     
     def fit(self, X: pd.DataFrame) -> 'IsolationForestDetector':
@@ -62,8 +63,9 @@ class IsolationForestDetector:
         Returns:
             Self
         """
-        # Store feature columns
+        # Store feature columns and statistics for imputation
         self.feature_columns_ = X.columns.tolist()
+        self.feature_means_ = X.mean().to_dict()
         
         # Drop rows with NaN values
         X_clean = X.dropna()
@@ -92,8 +94,8 @@ class IsolationForestDetector:
         # Ensure same feature columns
         X = X[self.feature_columns_]
         
-        # Handle NaN values
-        X_clean = X.fillna(X.mean())
+        # Handle NaN values using training statistics
+        X_clean = X.fillna(pd.Series(self.feature_means_))
         
         predictions = self.model.predict(X_clean)
         return predictions
@@ -114,8 +116,8 @@ class IsolationForestDetector:
         # Ensure same feature columns
         X = X[self.feature_columns_]
         
-        # Handle NaN values
-        X_clean = X.fillna(X.mean())
+        # Handle NaN values using training statistics
+        X_clean = X.fillna(pd.Series(self.feature_means_))
         
         scores = self.model.score_samples(X_clean)
         return scores
@@ -165,6 +167,7 @@ class IsolationForestDetector:
         model_data = {
             'model': self.model,
             'feature_columns': self.feature_columns_,
+            'feature_means': self.feature_means_,
             'params': {
                 'n_estimators': self.n_estimators,
                 'max_samples': self.max_samples,
@@ -197,6 +200,7 @@ class IsolationForestDetector:
         detector = cls(**model_data['params'])
         detector.model = model_data['model']
         detector.feature_columns_ = model_data['feature_columns']
+        detector.feature_means_ = model_data.get('feature_means', {})
         detector.is_fitted_ = True
         
         logger.info(f"Model loaded from {path}")
