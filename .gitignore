@@ -208,3 +208,8 @@ __marimo__/
 
 # Data directories (project-specific)
 data/
+
+# Case study outputs
+case_studies/hospital_anomalies/reports/figures/*.png
+case_studies/hospital_anomalies/reports/results/*.csv
+case_studies/hospital_anomalies/reports/models/*.joblib
