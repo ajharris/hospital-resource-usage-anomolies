@@ -3,8 +3,10 @@ Data ingestion module for CIHI hospital data.
 """
 
 import pandas as pd
+import json
 from pathlib import Path
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 from .utils import get_logger, get_data_path, ensure_data_dirs
 
 logger = get_logger(__name__)
@@ -15,7 +17,7 @@ def ingest_cihi_data(
     force_download: bool = False
 ) -> dict:
     """
-    Ingest CIHI hospital datasets using the acquisition package.
+    Ingest CIHI hospital datasets using the publicdata_ca package.
     
     Args:
         dataset_ids: List of dataset IDs to fetch
@@ -24,15 +26,18 @@ def ingest_cihi_data(
     Returns:
         Dictionary mapping dataset_id to DataFrame
     """
+    from publicdata_ca import DatasetRef, fetch_dataset
+    
     ensure_data_dirs("cihi")
     datasets = {}
     
     for dataset_id in dataset_ids:
         logger.info(f"Fetching dataset: {dataset_id}")
         try:
-            # For MVP, we'll create mock data since actual CIHI URLs need authentication
-            # In production, this would use fetch_dataset()
-            df = _create_mock_cihi_data(dataset_id)
+            # Try to fetch using publicdata_ca
+            # For MVP, CIHI datasets may not be in the default catalog yet,
+            # so we'll create mock data with proper metadata tracking
+            df, metadata = _fetch_cihi_dataset(dataset_id, force_download)
             datasets[dataset_id] = df
             
             # Save raw data
@@ -41,11 +46,95 @@ def ingest_cihi_data(
             df.to_parquet(raw_path, index=False)
             logger.info(f"Saved raw data to {raw_path}")
             
+            # Save metadata sidecar JSON
+            metadata_path = get_data_path("raw", "cihi", f"{dataset_id}_metadata.json")
+            _save_metadata_sidecar(metadata_path, metadata)
+            logger.info(f"Saved metadata to {metadata_path}")
+            
+            # Save processed data (with parsed dates)
+            processed_df = _process_dataset(df)
+            processed_path = get_data_path("processed", "cihi", f"{dataset_id}.parquet")
+            processed_path.parent.mkdir(parents=True, exist_ok=True)
+            processed_df.to_parquet(processed_path, index=False)
+            logger.info(f"Saved processed data to {processed_path}")
+            
         except Exception as e:
             logger.error(f"Failed to fetch {dataset_id}: {e}")
             raise
     
     return datasets
+
+
+def _fetch_cihi_dataset(
+    dataset_id: str, 
+    force_download: bool = False
+) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    """
+    Fetch CIHI dataset and return DataFrame with metadata.
+    
+    For MVP, creates mock data since CIHI datasets may require
+    authentication or may not be in the publicdata_ca catalog yet.
+    In production, this would use fetch_dataset() with proper DatasetRef.
+    
+    Args:
+        dataset_id: Dataset identifier
+        force_download: Whether to force re-download
+    
+    Returns:
+        Tuple of (DataFrame, metadata_dict)
+    """
+    # For now, use mock data since CIHI may not be in publicdata_ca MVP catalog
+    # In production, this would be:
+    # ref = DatasetRef(provider='cihi', id=dataset_id)
+    # result = fetch_dataset(ref, output_dir=str(get_data_path("raw", "cihi")))
+    
+    df = _create_mock_cihi_data(dataset_id)
+    
+    metadata = {
+        "source": "CIHI (Canadian Institute for Health Information)",
+        "dataset_id": dataset_id,
+        "retrieval_date": datetime.now().isoformat(),
+        "provider": "mock",  # Would be 'cihi' in production
+        "url": f"https://www.cihi.ca/en/datasets/{dataset_id}",
+        "description": f"Hospital utilization data for {dataset_id}",
+        "note": "MVP implementation using mock data. In production, would use publicdata_ca fetch_dataset()."
+    }
+    
+    return df, metadata
+
+
+def _save_metadata_sidecar(filepath: Path, metadata: Dict[str, Any]) -> None:
+    """
+    Save metadata to a JSON sidecar file.
+    
+    Args:
+        filepath: Path to the metadata JSON file
+        metadata: Metadata dictionary to save
+    """
+    with open(filepath, 'w') as f:
+        json.dump(metadata, f, indent=2)
+
+
+def _process_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a dataset to ensure stable column names and parsed dates.
+    
+    Args:
+        df: Raw DataFrame
+    
+    Returns:
+        Processed DataFrame with parsed dates and stable column names
+    """
+    df = df.copy()
+    
+    # Ensure date column is parsed as datetime
+    if 'date' in df.columns:
+        df['date'] = pd.to_datetime(df['date'])
+    
+    # Standardize column names (lowercase, underscores)
+    df.columns = [col.lower().replace(' ', '_').replace('-', '_') for col in df.columns]
+    
+    return df
 
 
 def _create_mock_cihi_data(dataset_id: str) -> pd.DataFrame:
