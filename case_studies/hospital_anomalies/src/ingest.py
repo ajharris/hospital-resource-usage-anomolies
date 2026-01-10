@@ -6,7 +6,7 @@ import pandas as pd
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from .utils import get_logger, get_data_path, ensure_data_dirs
 
 logger = get_logger(__name__)
@@ -26,7 +26,8 @@ def ingest_cihi_data(
     Returns:
         Dictionary mapping dataset_id to DataFrame
     """
-    from publicdata_ca import DatasetRef, fetch_dataset
+    # Import here to prepare for future production use with real CIHI data
+    # from publicdata_ca import DatasetRef, fetch_dataset
     
     ensure_data_dirs("cihi")
     datasets = {}
@@ -68,7 +69,7 @@ def ingest_cihi_data(
 def _fetch_cihi_dataset(
     dataset_id: str, 
     force_download: bool = False
-) -> tuple[pd.DataFrame, Dict[str, Any]]:
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Fetch CIHI dataset and return DataFrame with metadata.
     
