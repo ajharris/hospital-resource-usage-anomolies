@@ -3,7 +3,7 @@ name = "hospital-resource-usage-anomalies"
 version = "0.1.0"
 description = "Hospital resource usage anomaly detection case study"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "publicdata-ca>=0.1.0",
     "pandas>=2.0.0",
