@@ -154,4 +154,4 @@ Anomalies are detected at the regional and hospital-group level across time.
 
 **Author:** [Andrew Harris](https://github.com/ajharris)  
 **License:** See [LICENSE](LICENSE)  
-**Status:** ✅ Complete and tested
+**Status:** IN PROGRESS
