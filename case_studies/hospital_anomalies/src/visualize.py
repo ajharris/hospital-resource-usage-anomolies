@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from typing import Optional, List
-from publicdata_ca.utils.logging import get_logger
+from .utils import get_logger
 
 logger = get_logger(__name__)
 

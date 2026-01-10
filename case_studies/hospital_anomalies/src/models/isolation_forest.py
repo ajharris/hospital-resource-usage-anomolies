@@ -8,7 +8,7 @@ from sklearn.ensemble import IsolationForest
 from typing import Optional, Dict, Any
 import joblib
 from pathlib import Path
-from publicdata_ca.utils.logging import get_logger
+from ..utils import get_logger
 
 logger = get_logger(__name__)
 

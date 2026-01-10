@@ -5,7 +5,7 @@ I/O utilities for loading and saving data artifacts.
 import pandas as pd
 from pathlib import Path
 from typing import Optional, Dict, Any
-from publicdata_ca.utils.logging import get_logger
+from .utils import get_logger, get_project_root
 
 logger = get_logger(__name__)
 
@@ -85,8 +85,6 @@ def ensure_output_dirs(config: dict):
     Args:
         config: Configuration dictionary with paths
     """
-    from publicdata_ca.acquisition.storage import get_project_root
-    
     root = get_project_root()
     
     paths = config.get('paths', {})
@@ -108,8 +106,6 @@ def get_output_path(config: dict, path_key: str, filename: str) -> Path:
     Returns:
         Full path
     """
-    from publicdata_ca.acquisition.storage import get_project_root
-    
     root = get_project_root()
     rel_path = config.get('paths', {}).get(path_key, f'data/{path_key}')
     

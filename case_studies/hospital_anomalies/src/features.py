@@ -5,7 +5,7 @@ Feature engineering for time-series anomaly detection.
 import pandas as pd
 import numpy as np
 from typing import List, Optional
-from publicdata_ca.utils.logging import get_logger
+from .utils import get_logger
 
 logger = get_logger(__name__)
 

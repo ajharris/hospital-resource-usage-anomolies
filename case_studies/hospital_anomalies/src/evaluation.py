@@ -5,7 +5,7 @@ Evaluation utilities for unsupervised anomaly detection.
 import pandas as pd
 import numpy as np
 from typing import Dict, List
-from publicdata_ca.utils.logging import get_logger
+from .utils import get_logger
 
 logger = get_logger(__name__)
 
