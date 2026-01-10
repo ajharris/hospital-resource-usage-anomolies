@@ -55,12 +55,11 @@ jupyter notebook case_studies/hospital_anomalies/notebooks/
 
 ```
 hospital-resource-usage-anomolies/
-├── src/publicdata_ca/              # Reusable data acquisition package
-│   ├── acquisition/                # Data fetching & validation
-│   └── utils/                      # Logging, config, dates
-│
 ├── case_studies/hospital_anomalies/  # Anomaly detection case study
 │   ├── src/                        # Source code modules
+│   │   ├── utils.py               # Utilities for logging, config, paths
+│   │   ├── models/                # ML model implementations
+│   │   └── ...                    # Other modules
 │   ├── tests/                      # Comprehensive test suite
 │   ├── notebooks/                  # Jupyter notebooks
 │   ├── config/                     # YAML configuration
@@ -70,6 +69,8 @@ hospital-resource-usage-anomolies/
 ├── docs/                           # Portfolio documentation
 └── .github/workflows/              # CI/CD configuration
 ```
+
+**Dependencies**: Uses the published [publicdata-ca](https://pypi.org/project/publicdata-ca/) package from PyPI for data acquisition.
 
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed documentation.
 

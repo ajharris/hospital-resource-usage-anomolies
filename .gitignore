@@ -213,3 +213,4 @@ data/
 case_studies/hospital_anomalies/reports/figures/*.png
 case_studies/hospital_anomalies/reports/results/*.csv
 case_studies/hospital_anomalies/reports/models/*.joblib
+

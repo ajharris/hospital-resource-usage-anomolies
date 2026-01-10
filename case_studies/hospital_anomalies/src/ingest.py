@@ -5,9 +5,7 @@ Data ingestion module for CIHI hospital data.
 import pandas as pd
 from pathlib import Path
 from typing import List, Optional
-from publicdata_ca.acquisition import fetch_dataset, ensure_data_dirs
-from publicdata_ca.acquisition.storage import get_data_path
-from publicdata_ca.utils.logging import get_logger
+from .utils import get_logger, get_data_path, ensure_data_dirs
 
 logger = get_logger(__name__)
 

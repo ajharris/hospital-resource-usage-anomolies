@@ -5,8 +5,7 @@ Pipeline orchestration for the hospital anomalies case study.
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any
-from publicdata_ca.utils.logging import setup_logging, get_logger
-from publicdata_ca.utils.config import load_config
+from .utils import setup_logging, get_logger, load_config
 
 from .ingest import ingest_cihi_data
 from .qc import run_qc_checks

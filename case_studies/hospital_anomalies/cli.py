@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from case_studies.hospital_anomalies.src.pipeline import run_pipeline
-from publicdata_ca.utils.logging import setup_logging, get_logger
+from case_studies.hospital_anomalies.src.utils import setup_logging, get_logger
 
 
 def main():
