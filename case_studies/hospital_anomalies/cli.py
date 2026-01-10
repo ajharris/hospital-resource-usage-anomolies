@@ -10,7 +10,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from case_studies.hospital_anomalies.src.pipeline import run_pipeline
-from case_studies.hospital_anomalies.src.utils import setup_logging, get_logger
+from case_studies.hospital_anomalies.src.ingest import ingest_cihi_data
+from case_studies.hospital_anomalies.src.utils import setup_logging, get_logger, load_config
 
 
 def main():
@@ -21,8 +22,8 @@ def main():
     
     parser.add_argument(
         'command',
-        choices=['run'],
-        help='Command to execute'
+        choices=['run', 'ingest'],
+        help='Command to execute (run: full pipeline, ingest: data ingestion only)'
     )
     
     parser.add_argument(
@@ -47,19 +48,31 @@ def main():
     logger = get_logger(__name__)
     
     try:
+        config_path = Path(args.config)
+        
+        if not config_path.exists():
+            logger.error(f"Configuration file not found: {config_path}")
+            sys.exit(1)
+        
         if args.command == 'run':
-            config_path = Path(args.config)
-            
-            if not config_path.exists():
-                logger.error(f"Configuration file not found: {config_path}")
-                sys.exit(1)
-            
             logger.info(f"Running pipeline with config: {config_path}")
             results = run_pipeline(config_path)
             logger.info("Pipeline completed successfully!")
+        
+        elif args.command == 'ingest':
+            logger.info(f"Running data ingestion with config: {config_path}")
+            config = load_config(config_path)
+            dataset_ids = config.to_dict().get('datasets', [])
+            
+            if not dataset_ids:
+                logger.error("No datasets specified in configuration file")
+                sys.exit(1)
+            
+            datasets = ingest_cihi_data(dataset_ids, force_download=True)
+            logger.info(f"Ingestion completed successfully! Fetched {len(datasets)} datasets.")
             
     except Exception as e:
-        logger.error(f"Pipeline failed: {e}", exc_info=True)
+        logger.error(f"Command failed: {e}", exc_info=True)
         sys.exit(1)
 
 
