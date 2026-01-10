@@ -10,21 +10,6 @@ hospital-resource-usage-anomolies/
 ├── LICENSE                            # Project license
 ├── pyproject.toml                     # Python project configuration & dependencies
 │
-├── src/publicdata_ca/                 # Main data acquisition package
-│   ├── __init__.py
-│   ├── acquisition/                   # Data acquisition modules
-│   │   ├── __init__.py
-│   │   ├── registry.py                # Dataset registry with metadata
-│   │   ├── fetch.py                   # Download helpers (HTTP, retry, caching)
-│   │   ├── storage.py                 # Path conventions, versioned folders
-│   │   ├── validate.py                # Schema checks, types, row counts
-│   │   └── transforms.py              # Minimal normalization utilities
-│   └── utils/                         # Utility modules
-│       ├── __init__.py
-│       ├── logging.py                 # Logging configuration
-│       ├── dates.py                   # Date/time utilities
-│       └── config.py                  # Environment & defaults
-│
 ├── data/                              # Data storage (gitignored)
 │   ├── raw/cihi/                      # Raw downloaded data
 │   ├── interim/cihi/                  # Intermediate processing steps
@@ -44,8 +29,9 @@ hospital-resource-usage-anomolies/
 │   │
 │   ├── src/                           # Importable source code
 │   │   ├── __init__.py
+│   │   ├── utils.py                   # Logging, config, path utilities
 │   │   ├── pipeline.py                # Orchestrates all steps
-│   │   ├── ingest.py                  # Calls publicdata_ca.acquisition
+│   │   ├── ingest.py                  # Data ingestion using publicdata-ca
 │   │   ├── qc.py                      # Missingness, outliers, seasonality
 │   │   ├── features.py                # Time-series feature engineering
 │   │   ├── evaluation.py              # Stability checks, heuristics
@@ -80,7 +66,7 @@ hospital-resource-usage-anomolies/
 ## Key Features
 
 ### 1. Separation of Concerns
-- **Data Acquisition** (`src/publicdata_ca/`): Reusable package for fetching Canadian public data
+- **Data Acquisition**: Uses the published [publicdata-ca](https://pypi.org/project/publicdata-ca/) package from PyPI
 - **Case Study** (`case_studies/hospital_anomalies/`): Specific anomaly detection implementation
 - **Documentation** (`docs/`): Portfolio-ready write-ups
 
