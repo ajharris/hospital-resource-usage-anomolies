@@ -1,0 +1,185 @@
+{
+  "timestamp": "2026-01-11T22:43:20.880189",
+  "datasets": {
+    "cihi_hospital_admissions": {
+      "dataset_id": "cihi_hospital_admissions",
+      "row_count": 1826,
+      "column_count": 4,
+      "columns": [
+        "date",
+        "region",
+        "hospital_id",
+        "admissions"
+      ],
+      "checks": {
+        "required_columns": {
+          "required_columns": [
+            "date"
+          ],
+          "present_columns": [
+            "date"
+          ],
+          "missing_columns": [],
+          "passed": true
+        },
+        "date_monotonic": {
+          "date_column": "date",
+          "group_columns": [
+            "region",
+            "hospital_id"
+          ],
+          "non_monotonic_groups": [],
+          "passed": true
+        },
+        "missingness": {
+          "threshold": 0.3,
+          "ratios": {
+            "date": 0.0,
+            "region": 0.0,
+            "hospital_id": 0.0,
+            "admissions": 0.0
+          }
+        },
+        "numeric_bounds": {
+          "bounds_checked": {
+            "admissions": {
+              "min": 0
+            }
+          },
+          "violations": {},
+          "passed": true
+        },
+        "date_range": {
+          "expected_start": "2019-01-01",
+          "expected_end": "2023-12-31",
+          "valid": true
+        }
+      },
+      "status": "passed"
+    },
+    "cihi_bed_occupancy": {
+      "dataset_id": "cihi_bed_occupancy",
+      "row_count": 1826,
+      "column_count": 4,
+      "columns": [
+        "date",
+        "region",
+        "hospital_id",
+        "occupancy_rate"
+      ],
+      "checks": {
+        "required_columns": {
+          "required_columns": [
+            "date"
+          ],
+          "present_columns": [
+            "date"
+          ],
+          "missing_columns": [],
+          "passed": true
+        },
+        "date_monotonic": {
+          "date_column": "date",
+          "group_columns": [
+            "region",
+            "hospital_id"
+          ],
+          "non_monotonic_groups": [],
+          "passed": true
+        },
+        "missingness": {
+          "threshold": 0.3,
+          "ratios": {
+            "date": 0.0,
+            "region": 0.0,
+            "hospital_id": 0.0,
+            "occupancy_rate": 0.0
+          }
+        },
+        "numeric_bounds": {
+          "bounds_checked": {
+            "occupancy_rate": {
+              "min": 0,
+              "max": 100
+            }
+          },
+          "violations": {},
+          "passed": true
+        },
+        "date_range": {
+          "expected_start": "2019-01-01",
+          "expected_end": "2023-12-31",
+          "valid": true
+        }
+      },
+      "status": "passed"
+    },
+    "cihi_icu_utilization": {
+      "dataset_id": "cihi_icu_utilization",
+      "row_count": 1826,
+      "column_count": 6,
+      "columns": [
+        "date",
+        "region",
+        "hospital_id",
+        "icu_beds_used",
+        "icu_beds_total",
+        "icu_utilization_rate"
+      ],
+      "checks": {
+        "required_columns": {
+          "required_columns": [
+            "date"
+          ],
+          "present_columns": [
+            "date"
+          ],
+          "missing_columns": [],
+          "passed": true
+        },
+        "date_monotonic": {
+          "date_column": "date",
+          "group_columns": [
+            "region",
+            "hospital_id"
+          ],
+          "non_monotonic_groups": [],
+          "passed": true
+        },
+        "missingness": {
+          "threshold": 0.3,
+          "ratios": {
+            "date": 0.0,
+            "region": 0.0,
+            "hospital_id": 0.0,
+            "icu_beds_used": 0.0,
+            "icu_beds_total": 0.0,
+            "icu_utilization_rate": 0.0
+          }
+        },
+        "numeric_bounds": {
+          "bounds_checked": {
+            "icu_beds_used": {
+              "min": 0
+            },
+            "icu_beds_total": {
+              "min": 0
+            },
+            "icu_utilization_rate": {
+              "min": 0,
+              "max": 100
+            }
+          },
+          "violations": {},
+          "passed": true
+        },
+        "date_range": {
+          "expected_start": "2019-01-01",
+          "expected_end": "2023-12-31",
+          "valid": true
+        }
+      },
+      "status": "passed"
+    }
+  }
+}

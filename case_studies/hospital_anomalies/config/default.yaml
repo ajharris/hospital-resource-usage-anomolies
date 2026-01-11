@@ -17,6 +17,23 @@ processing:
   missing_threshold: 0.3  # Maximum allowed missing data ratio
   outlier_std_threshold: 3.0
 
+# Quality Control
+qc:
+  fail_fast: true  # Stop pipeline immediately on QC failures
+  required_columns:
+    - date
+  date_column: date
+  date_monotonic_group_by:
+    - region
+    - hospital_id
+  missing_threshold: 0.3  # Maximum allowed missing data ratio
+  fail_on_missing_threshold: false  # Set to true to fail on threshold violations
+  check_outliers: false  # Set to true to include outlier detection in QC
+  numeric_bounds:
+    # Bounds are auto-detected for common patterns, but can be explicitly configured here
+    # Example: admissions: {min: 0}
+    # Example: occupancy_rate: {min: 0, max: 100}
+
 # Feature Engineering
 features:
   rolling_windows: [7, 14, 30]  # Days for rolling statistics
