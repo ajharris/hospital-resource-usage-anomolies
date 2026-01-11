@@ -5,9 +5,11 @@ Quality control and validation for hospital data.
 import pandas as pd
 import numpy as np
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from .utils import get_logger
+from .io import get_output_path
 
 logger = get_logger(__name__)
 
@@ -397,8 +399,6 @@ def run_qc_checks(
     Raises:
         QCValidationError: If critical validation checks fail
     """
-    from datetime import datetime
-    
     qc_results = {
         'timestamp': datetime.now().isoformat(),
         'datasets': {}
@@ -463,7 +463,7 @@ def run_qc_checks(
                     # Occupancy as decimal should be in [0, 1]
                     elif 'occupancy' in col.lower() and not col.lower().endswith('_rate'):
                         # Check if values suggest it's a percentage or decimal
-                        if col in df.columns and df[col].max() <= 1.5:
+                        if df[col].max() <= 1.5:
                             bounds_config[col] = {'min': 0, 'max': 1}
             
             if bounds_config:
@@ -503,7 +503,6 @@ def run_qc_checks(
             
             if fail_fast:
                 # Save partial results before failing
-                from .io import get_output_path
                 qc_results['datasets'][dataset_id] = results
                 qc_report_path = get_output_path(config, 'results', 'qc_report.json')
                 persist_qc_report(qc_results, qc_report_path)
@@ -512,7 +511,6 @@ def run_qc_checks(
         qc_results['datasets'][dataset_id] = results
     
     # Persist QC report
-    from .io import get_output_path
     qc_report_path = get_output_path(config, 'results', 'qc_report.json')
     persist_qc_report(qc_results, qc_report_path)
     
