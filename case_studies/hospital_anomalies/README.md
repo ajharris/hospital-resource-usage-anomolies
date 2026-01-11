@@ -41,6 +41,14 @@ Run the complete pipeline:
 python -m case_studies.hospital_anomalies.cli run --config case_studies/hospital_anomalies/config/default.yaml
 ```
 
+The pipeline includes automated quality control checks that validate:
+- Required columns are present
+- Date columns are monotonic (sorted correctly)
+- Numeric values are within expected bounds (e.g., no negative admissions)
+- Missing data is below configurable thresholds
+
+QC results are saved to `reports/results/qc_report.json` for audit and debugging.
+
 ### Jupyter Notebooks
 
 Interactive exploration and analysis:
@@ -51,9 +59,36 @@ Interactive exploration and analysis:
 ## Output
 
 The pipeline generates:
-- Time-series plots with anomaly overlays (`reports/figures/`)
-- Ranked anomaly windows with severity scores (`reports/results/anomalies.csv`)
-- Model artifacts and intermediate data (`data/processed/cihi/`)
+- **QC Report** - Data validation results (`reports/results/qc_report.json`)
+- **Time-series plots** - With anomaly overlays (`reports/figures/`)
+- **Anomaly rankings** - Severity scores and details (`reports/results/anomalies.csv`)
+- **Model artifacts** - Trained models and intermediate data (`data/processed/cihi/`)
+
+### Quality Control Report
+
+The QC report includes detailed validation results:
+- Required column checks (fails pipeline if missing)
+- Date monotonicity checks (warns if dates are not sorted)
+- Numeric bounds validation (detects negative admissions, invalid rates)
+- Missing data summary (configurable thresholds)
+
+Example report structure:
+```json
+{
+  "timestamp": "2026-01-11T22:43:20.880189",
+  "datasets": {
+    "cihi_hospital_admissions": {
+      "status": "passed",
+      "checks": {
+        "required_columns": {"passed": true},
+        "date_monotonic": {"passed": true},
+        "numeric_bounds": {"passed": true, "violations": {}},
+        "missingness": {"threshold": 0.3, "ratios": {...}}
+      }
+    }
+  }
+}
+```
 
 ## Evaluation
 
