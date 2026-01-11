@@ -27,8 +27,8 @@ from case_studies.hospital_anomalies.src.qc import (
 @pytest.fixture
 def sample_hospital_data():
     """Create sample hospital data for testing."""
-    dates = pd.date_range(start="2023-01-01", end="2023-01-31", freq="D")
     np.random.seed(42)
+    dates = pd.date_range(start="2023-01-01", end="2023-01-31", freq="D")
     
     df = pd.DataFrame({
         'date': dates,
@@ -45,8 +45,8 @@ def sample_hospital_data():
 @pytest.fixture
 def sample_data_with_issues():
     """Create sample data with various QC issues."""
-    dates = pd.date_range(start="2023-01-01", end="2023-01-31", freq="D")
     np.random.seed(42)
+    dates = pd.date_range(start="2023-01-01", end="2023-01-31", freq="D")
     
     df = pd.DataFrame({
         'date': dates,

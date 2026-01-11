@@ -458,13 +458,12 @@ def run_qc_checks(
                     if 'admission' in col.lower() or 'beds_used' in col.lower() or 'icu_beds' in col.lower():
                         bounds_config[col] = {'min': 0}
                     # Rates and percentages should be in [0, 100]
-                    elif 'rate' in col.lower() and col.lower().endswith('_rate'):
+                    elif col.lower().endswith('_rate'):
                         bounds_config[col] = {'min': 0, 'max': 100}
                     # Occupancy as decimal should be in [0, 1]
-                    elif 'occupancy' in col.lower() and not col.lower().endswith('_rate'):
-                        # Check if values suggest it's a percentage or decimal
-                        if df[col].max() <= 1.5:
-                            bounds_config[col] = {'min': 0, 'max': 1}
+                    # Use threshold of 1.5 to distinguish decimal (<=1) from percentage (>1)
+                    elif 'occupancy' in col.lower() and df[col].max() <= 1.5:
+                        bounds_config[col] = {'min': 0, 'max': 1}
             
             if bounds_config:
                 results['checks']['numeric_bounds'] = check_numeric_bounds(df, bounds_config)
