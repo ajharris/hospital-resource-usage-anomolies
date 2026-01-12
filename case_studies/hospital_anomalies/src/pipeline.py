@@ -9,11 +9,11 @@ from .utils import setup_logging, get_logger, load_config
 
 from .ingest import ingest_cihi_data
 from .qc import run_qc_checks
-from .features import engineer_features
+from .features import build_features
 from .models.isolation_forest import IsolationForestDetector
 from .evaluation import evaluate_anomalies
 from .visualize import create_anomaly_report_figures
-from .io import save_results_summary, save_features, ensure_output_dirs, get_output_path
+from .io import save_results_summary, save_features, save_csv, ensure_output_dirs, get_output_path
 
 logger = get_logger(__name__)
 
@@ -61,7 +61,7 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     
     # Step 4: Feature engineering
     logger.info("\n[Step 4/6] Engineering features...")
-    features_df = engineer_features(combined_df, config_dict)
+    features_df = build_features(combined_df, config_dict)
     
     # Save features if configured
     if config_dict.get('output', {}).get('save_features', True):
@@ -112,6 +112,13 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     # Save top anomalies
     if config_dict.get('output', {}).get('save_predictions', True):
         save_results_summary(eval_results['top_anomalies'], config_dict)
+    
+    # Save all anomaly dates to a separate file
+    if config_dict.get('output', {}).get('save_anomaly_dates', True):
+        if 'anomaly_dates' in eval_results and len(eval_results['anomaly_dates']) > 0:
+            anomaly_dates_path = get_output_path(config_dict, 'results', 'anomaly_dates.csv')
+            save_csv(eval_results['anomaly_dates'], anomaly_dates_path)
+            logger.info(f"Saved {len(eval_results['anomaly_dates'])} anomaly dates to {anomaly_dates_path}")
     
     # Create visualizations
     if config_dict.get('output', {}).get('save_figures', True):

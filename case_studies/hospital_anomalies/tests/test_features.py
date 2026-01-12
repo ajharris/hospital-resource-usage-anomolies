@@ -16,7 +16,9 @@ from case_studies.hospital_anomalies.src.features import (
     create_lag_features,
     create_seasonal_features,
     create_difference_features,
-    engineer_features
+    engineer_features,
+    build_features,
+    handle_missing_values
 )
 
 
@@ -102,3 +104,67 @@ def test_engineer_features_complete(sample_timeseries):
     assert 'value_rolling_mean_7' in df.columns
     assert 'value_lag_1' in df.columns
     assert 'month' in df.columns
+
+
+def test_handle_missing_values(sample_timeseries):
+    """Test missing value handling."""
+    # Create a copy with some NaN values
+    df = sample_timeseries.copy()
+    df.loc[10:15, 'value'] = np.nan
+    
+    # Test ffill method
+    df_filled = handle_missing_values(df, method='ffill')
+    assert df_filled['value'].isna().sum() == 0
+    
+    # Test zero method
+    df_zero = handle_missing_values(df, method='zero', fill_value=0)
+    assert df_zero['value'].isna().sum() == 0
+    assert df_zero.loc[10, 'value'] == 0
+
+
+def test_build_features(sample_timeseries):
+    """Test build_features function with NaN handling."""
+    # Test with default config
+    df_features = build_features(sample_timeseries)
+    
+    # Check that there are no NaN values in the output
+    assert df_features.isna().sum().sum() == 0
+    
+    # Check that features were created
+    assert len(df_features.columns) > len(sample_timeseries.columns)
+    
+    # Check that it has rolling and lag features (from default config)
+    rolling_cols = [col for col in df_features.columns if 'rolling' in col]
+    lag_cols = [col for col in df_features.columns if 'lag' in col]
+    assert len(rolling_cols) > 0
+    assert len(lag_cols) > 0
+
+
+def test_build_features_custom_config(sample_timeseries):
+    """Test build_features with custom configuration."""
+    config = {
+        'features': {
+            'seasonal_features': True,
+            'rolling_windows': [3, 6, 12],
+            'lag_features': [1, 2, 3]
+        }
+    }
+    
+    df_features = build_features(
+        sample_timeseries,
+        config=config,
+        nan_method='zero'
+    )
+    
+    # Verify no NaNs
+    assert df_features.isna().sum().sum() == 0
+    
+    # Verify specific rolling features exist
+    assert 'value_rolling_mean_3' in df_features.columns
+    assert 'value_rolling_mean_6' in df_features.columns
+    assert 'value_rolling_mean_12' in df_features.columns
+    
+    # Verify specific lag features exist
+    assert 'value_lag_1' in df_features.columns
+    assert 'value_lag_2' in df_features.columns
+    assert 'value_lag_3' in df_features.columns

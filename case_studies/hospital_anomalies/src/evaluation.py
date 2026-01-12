@@ -78,6 +78,67 @@ def get_top_anomalies(
     return top_k
 
 
+def get_anomaly_dates(
+    df: pd.DataFrame,
+    date_col: str = 'date',
+    anomaly_col: str = 'is_anomaly',
+    score_col: str = 'anomaly_score',
+    include_scores: bool = True,
+    value_cols: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """
+    Extract all anomaly dates with associated information.
+    
+    This function creates a summary table of all detected anomalies,
+    including dates, scores, and optionally the values that triggered
+    the anomaly detection.
+    
+    Args:
+        df: DataFrame with anomaly predictions
+        date_col: Name of date column
+        anomaly_col: Name of anomaly indicator column
+        score_col: Name of anomaly score column
+        include_scores: Whether to include anomaly scores
+        value_cols: Optional list of value columns to include
+    
+    Returns:
+        DataFrame with anomaly dates and related information
+    """
+    # Filter to only anomalies
+    anomalies_df = df[df[anomaly_col]].copy()
+    
+    if len(anomalies_df) == 0:
+        logger.warning("No anomalies detected in the dataset")
+        return pd.DataFrame()
+    
+    # Select columns to include
+    cols_to_include = [date_col]
+    
+    if include_scores and score_col in anomalies_df.columns:
+        cols_to_include.append(score_col)
+    
+    if value_cols:
+        for col in value_cols:
+            if col in anomalies_df.columns:
+                cols_to_include.append(col)
+    
+    # Create summary dataframe
+    anomaly_summary = anomalies_df[cols_to_include].copy()
+    
+    # Sort by date (or by score if available)
+    if include_scores and score_col in anomaly_summary.columns:
+        anomaly_summary = anomaly_summary.sort_values(score_col)
+    else:
+        anomaly_summary = anomaly_summary.sort_values(date_col)
+    
+    # Reset index for clean output
+    anomaly_summary = anomaly_summary.reset_index(drop=True)
+    
+    logger.info(f"Extracted {len(anomaly_summary)} anomaly dates")
+    
+    return anomaly_summary
+
+
 def seasonality_sanity_check(
     df: pd.DataFrame,
     date_col: str,
@@ -190,6 +251,17 @@ def evaluate_anomalies(
     # Top-k anomalies
     top_k = config.get('evaluation', {}).get('top_k_anomalies', 20)
     results['top_anomalies'] = get_top_anomalies(df, score_col, k=top_k)
+    
+    # All anomaly dates
+    value_cols = [col for col in df.columns if col not in [date_col, anomaly_col, score_col, 'prediction']
+                  and not any(x in col.lower() for x in ['id', 'rolling', 'lag', '_diff_', '_pct_', 
+                                                          'year', 'month', 'day', 'week', 'quarter',
+                                                          'sin', 'cos', '_std_', '_min_', '_max_'])]
+    results['anomaly_dates'] = get_anomaly_dates(
+        df, date_col, anomaly_col, score_col, 
+        include_scores=True, 
+        value_cols=value_cols[:5]  # Limit to first 5 value columns to keep table manageable
+    )
     
     # Seasonality check
     if config.get('evaluation', {}).get('seasonality_check', True):
