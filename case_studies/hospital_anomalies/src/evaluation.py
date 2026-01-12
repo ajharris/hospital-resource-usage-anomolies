@@ -289,7 +289,7 @@ def print_anomaly_dates_table(
     max_rows: Optional[int] = None
 ):
     """
-    Print anomaly dates as a formatted table to console.
+    Print anomaly dates as a formatted table to console and display in notebooks.
     
     Args:
         anomaly_dates: DataFrame with anomaly dates and information
@@ -303,32 +303,164 @@ def print_anomaly_dates_table(
     # Limit rows if specified
     display_df = anomaly_dates.head(max_rows) if max_rows else anomaly_dates
     
-    # Print header
-    print("\n" + "=" * 120)
-    print("ANOMALY DATES SUMMARY")
-    print("=" * 120)
-    print(f"Total anomalies detected: {len(anomaly_dates)}")
-    if max_rows and len(anomaly_dates) > max_rows:
-        print(f"Showing top {max_rows} anomalies")
-    print("=" * 120)
+    # Check if we're in a notebook environment
+    try:
+        from IPython.display import display, HTML
+        in_notebook = True
+    except ImportError:
+        in_notebook = False
     
-    # Print table
-    # Use pandas to_string with formatting
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', 120)
-    pd.set_option('display.max_colwidth', 80)
+    if in_notebook:
+        # Display in notebook with HTML formatting
+        try:
+            # Create a styled HTML table
+            html_table = _create_html_table(display_df, anomaly_dates, max_rows)
+            display(HTML(html_table))
+            
+            # Also display the DataFrame for interactive use
+            display(display_df)
+        except Exception as e:
+            logger.warning(f"Could not display HTML table in notebook: {e}")
+            # Fallback to regular display
+            display(display_df)
+    else:
+        # Console output
+        print("\n" + "=" * 120)
+        print("ANOMALY DATES SUMMARY")
+        print("=" * 120)
+        print(f"Total anomalies detected: {len(anomaly_dates)}")
+        if max_rows and len(anomaly_dates) > max_rows:
+            print(f"Showing top {max_rows} anomalies")
+        print("=" * 120)
+        
+        # Print table
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', 120)
+        pd.set_option('display.max_colwidth', 80)
+        
+        print(display_df.to_string(index=True))
+        
+        print("=" * 120)
+        
+        # Print instructions for using Google search links
+        if 'google_search_link' in display_df.columns:
+            print("\nTo investigate events on these dates:")
+            print("- Copy the google_search_link URL from the table above")
+            print("- Paste it into your browser to search for Canadian news/events on that date")
+        
+        print("\n")
+
+
+def _create_html_table(display_df: pd.DataFrame, full_df: pd.DataFrame, max_rows: Optional[int]) -> str:
+    """
+    Create an HTML table for notebook display.
     
-    print(display_df.to_string(index=True))
+    Args:
+        display_df: DataFrame to display
+        full_df: Full DataFrame (for count)
+        max_rows: Maximum rows displayed
     
-    print("=" * 120)
+    Returns:
+        HTML string
+    """
+    html = """
+    <style>
+        .anomaly-table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-family: Arial, sans-serif;
+        }
+        .anomaly-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .anomaly-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .anomaly-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .anomaly-table tr:hover {
+            background-color: #e0e0e0;
+        }
+        .anomaly-header {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .anomaly-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .anomaly-link:hover {
+            text-decoration: underline;
+        }
+        .anomaly-instructions {
+            background-color: #fffacd;
+            padding: 10px;
+            border-left: 4px solid #ffd700;
+            margin: 15px 0;
+        }
+    </style>
+    """
     
-    # Print instructions for using Google search links
+    # Header
+    html += f"""
+    <div class="anomaly-header">
+        <h3>🔍 ANOMALY DATES SUMMARY</h3>
+        <p>Total anomalies detected: {len(full_df)}</p>
+    """
+    if max_rows and len(full_df) > max_rows:
+        html += f"<p>Showing top {max_rows} anomalies</p>"
+    html += "</div>"
+    
+    # Instructions
     if 'google_search_link' in display_df.columns:
-        print("\nTo investigate events on these dates:")
-        print("- Copy the google_search_link URL from the table above")
-        print("- Paste it into your browser to search for Canadian news/events on that date")
+        html += """
+        <div class="anomaly-instructions">
+            <strong>💡 How to investigate:</strong> Click on the Google search links below to find Canadian news and events for each anomaly date.
+        </div>
+        """
     
-    print("\n")
+    # Table
+    html += '<table class="anomaly-table">'
+    
+    # Headers
+    html += "<thead><tr>"
+    for col in display_df.columns:
+        html += f"<th>{col}</th>"
+    html += "</tr></thead>"
+    
+    # Rows
+    html += "<tbody>"
+    for idx, row in display_df.iterrows():
+        html += "<tr>"
+        for col in display_df.columns:
+            value = row[col]
+            if col == 'google_search_link':
+                # Make link clickable
+                html += f'<td><a href="{value}" target="_blank" class="anomaly-link">Open in Google</a></td>'
+            elif col == 'date':
+                # Format date nicely
+                date_str = pd.to_datetime(value).strftime('%Y-%m-%d (%A)')
+                html += f'<td>{date_str}</td>'
+            elif isinstance(value, float):
+                # Format numbers
+                html += f'<td>{value:.4f}</td>'
+            else:
+                html += f'<td>{value}</td>'
+        html += "</tr>"
+    html += "</tbody></table>"
+    
+    return html
 
 
 def evaluate_anomalies(
