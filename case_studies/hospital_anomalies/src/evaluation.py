@@ -84,14 +84,16 @@ def get_anomaly_dates(
     anomaly_col: str = 'is_anomaly',
     score_col: str = 'anomaly_score',
     include_scores: bool = True,
-    value_cols: Optional[List[str]] = None
+    value_cols: Optional[List[str]] = None,
+    include_search_links: bool = True,
+    include_news_placeholder: bool = True
 ) -> pd.DataFrame:
     """
     Extract all anomaly dates with associated information.
     
     This function creates a summary table of all detected anomalies,
-    including dates, scores, and optionally the values that triggered
-    the anomaly detection.
+    including dates, scores, Google search links for Canadian events,
+    and placeholder for news headlines.
     
     Args:
         df: DataFrame with anomaly predictions
@@ -100,6 +102,8 @@ def get_anomaly_dates(
         score_col: Name of anomaly score column
         include_scores: Whether to include anomaly scores
         value_cols: Optional list of value columns to include
+        include_search_links: Whether to include Google search links
+        include_news_placeholder: Whether to include news headline placeholder
     
     Returns:
         DataFrame with anomaly dates and related information
@@ -125,6 +129,18 @@ def get_anomaly_dates(
     # Create summary dataframe
     anomaly_summary = anomalies_df[cols_to_include].copy()
     
+    # Add Google search links for Canadian events
+    if include_search_links:
+        anomaly_summary['google_search_link'] = anomaly_summary[date_col].apply(
+            lambda d: _create_google_search_link(d)
+        )
+    
+    # Add news headline placeholder
+    if include_news_placeholder:
+        anomaly_summary['news_headline'] = anomaly_summary[date_col].apply(
+            lambda d: _get_news_headline_placeholder(d)
+        )
+    
     # Sort by date (or by score if available)
     if include_scores and score_col in anomaly_summary.columns:
         anomaly_summary = anomaly_summary.sort_values(score_col)
@@ -137,6 +153,54 @@ def get_anomaly_dates(
     logger.info(f"Extracted {len(anomaly_summary)} anomaly dates")
     
     return anomaly_summary
+
+
+def _create_google_search_link(date_value) -> str:
+    """
+    Create a Google search link for Canadian news/events on a specific date.
+    
+    Args:
+        date_value: Date value (can be string, datetime, or Timestamp)
+    
+    Returns:
+        Google search URL string
+    """
+    # Convert to pandas Timestamp if needed
+    date_ts = pd.to_datetime(date_value)
+    date_str = date_ts.strftime('%Y-%m-%d')
+    
+    # Create Google search query for Canadian news/events on that date
+    # Format: "Canada news [date]" limited to Canadian sites
+    query = f"Canada news {date_str}"
+    # URL encode the query
+    import urllib.parse
+    encoded_query = urllib.parse.quote(query)
+    
+    # Create Google search URL with Canadian region preference
+    search_url = f"https://www.google.com/search?q={encoded_query}&gl=ca&hl=en"
+    
+    return search_url
+
+
+def _get_news_headline_placeholder(date_value) -> str:
+    """
+    Get a placeholder for news headline on a specific date.
+    
+    In production, this could call a news API. For now, returns a placeholder
+    indicating manual lookup is needed.
+    
+    Args:
+        date_value: Date value (can be string, datetime, or Timestamp)
+    
+    Returns:
+        Placeholder text or actual headline if available
+    """
+    # Convert to pandas Timestamp if needed
+    date_ts = pd.to_datetime(date_value)
+    date_str = date_ts.strftime('%B %d, %Y')
+    
+    # Return placeholder - in production this would call a news API
+    return f"[Check news for {date_str}]"
 
 
 def seasonality_sanity_check(
@@ -217,6 +281,54 @@ def calculate_stability_metrics(
         logger.info(f"  {key}: {value:.4f}")
     
     return metrics
+
+
+def print_anomaly_dates_table(
+    anomaly_dates: pd.DataFrame,
+    date_col: str = 'date',
+    max_rows: Optional[int] = None
+):
+    """
+    Print anomaly dates as a formatted table to console.
+    
+    Args:
+        anomaly_dates: DataFrame with anomaly dates and information
+        date_col: Name of date column
+        max_rows: Maximum number of rows to print (None for all)
+    """
+    if len(anomaly_dates) == 0:
+        logger.info("No anomalies to display")
+        return
+    
+    # Limit rows if specified
+    display_df = anomaly_dates.head(max_rows) if max_rows else anomaly_dates
+    
+    # Print header
+    print("\n" + "=" * 120)
+    print("ANOMALY DATES SUMMARY")
+    print("=" * 120)
+    print(f"Total anomalies detected: {len(anomaly_dates)}")
+    if max_rows and len(anomaly_dates) > max_rows:
+        print(f"Showing top {max_rows} anomalies")
+    print("=" * 120)
+    
+    # Print table
+    # Use pandas to_string with formatting
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', 120)
+    pd.set_option('display.max_colwidth', 80)
+    
+    print(display_df.to_string(index=True))
+    
+    print("=" * 120)
+    
+    # Print instructions for using Google search links
+    if 'google_search_link' in display_df.columns:
+        print("\nTo investigate events on these dates:")
+        print("- Copy the google_search_link URL from the table above")
+        print("- Paste it into your browser to search for Canadian news/events on that date")
+    
+    print("\n")
 
 
 def evaluate_anomalies(

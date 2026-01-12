@@ -11,7 +11,7 @@ from .ingest import ingest_cihi_data
 from .qc import run_qc_checks
 from .features import build_features
 from .models.isolation_forest import IsolationForestDetector
-from .evaluation import evaluate_anomalies
+from .evaluation import evaluate_anomalies, print_anomaly_dates_table
 from .visualize import create_anomaly_report_figures
 from .io import save_results_summary, save_features, save_csv, ensure_output_dirs, get_output_path
 
@@ -119,6 +119,12 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
             anomaly_dates_path = get_output_path(config_dict, 'results', 'anomaly_dates.csv')
             save_csv(eval_results['anomaly_dates'], anomaly_dates_path)
             logger.info(f"Saved {len(eval_results['anomaly_dates'])} anomaly dates to {anomaly_dates_path}")
+            
+            # Print anomaly dates table to console
+            print_anomaly_dates_table(
+                eval_results['anomaly_dates'],
+                max_rows=config_dict.get('evaluation', {}).get('print_top_anomalies', 20)
+            )
     
     # Create visualizations
     if config_dict.get('output', {}).get('save_figures', True):
