@@ -1,4 +1,4 @@
-### Case Study: Detecting Anomalies in Hospital Resource Usage (MVP)
+### Case Study: Detecting Anomalies in Hospital Resource Usage
 
 ## 🏥 Project Overview
 
