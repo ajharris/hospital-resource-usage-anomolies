@@ -4,6 +4,7 @@ Evaluation utilities for unsupervised anomaly detection.
 
 import pandas as pd
 import numpy as np
+import urllib.parse
 from typing import Dict, List, Optional
 from .utils import get_logger
 
@@ -173,7 +174,6 @@ def _create_google_search_link(date_value) -> str:
     # Format: "Canada news [date]" limited to Canadian sites
     query = f"Canada news {date_str}"
     # URL encode the query
-    import urllib.parse
     encoded_query = urllib.parse.quote(query)
     
     # Create Google search URL with Canadian region preference
@@ -333,12 +333,11 @@ def print_anomaly_dates_table(
             print(f"Showing top {max_rows} anomalies")
         print("=" * 120)
         
-        # Print table
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.width', 120)
-        pd.set_option('display.max_colwidth', 80)
-        
-        print(display_df.to_string(index=True))
+        # Print table with temporarily modified display options
+        with pd.option_context('display.max_columns', None,
+                               'display.width', 120,
+                               'display.max_colwidth', 80):
+            print(display_df.to_string(index=True))
         
         print("=" * 120)
         
