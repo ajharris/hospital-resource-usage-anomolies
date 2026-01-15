@@ -4,26 +4,30 @@ Pipeline orchestration for the hospital anomalies case study.
 
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from .utils import setup_logging, get_logger, load_config
 
 from .ingest import ingest_cihi_data
 from .qc import run_qc_checks
-from .features import engineer_features
+from .features import build_features
 from .models.isolation_forest import IsolationForestDetector
-from .evaluation import evaluate_anomalies
+from .evaluation import evaluate_anomalies, print_anomaly_dates_table
 from .visualize import create_anomaly_report_figures
-from .io import save_results_summary, save_features, ensure_output_dirs, get_output_path
+from .io import save_results_summary, save_features, save_csv, ensure_output_dirs, get_output_path
 
 logger = get_logger(__name__)
 
 
-def run_pipeline(config_path: Path) -> Dict[str, Any]:
+def run_pipeline(
+    config_path: Path,
+    date_range_override: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
     """
     Run the complete anomaly detection pipeline.
     
     Args:
         config_path: Path to configuration file
+        date_range_override: Optional mapping with 'start'/'end' ISO dates
     
     Returns:
         Dictionary with pipeline results
@@ -31,9 +35,20 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     # Load configuration
     config = load_config(config_path)
     config_dict = config.to_dict()
+
+    override_applied = None
+    if date_range_override:
+        config_dict.setdefault('date_range', {})
+        config_dict['date_range'].update(date_range_override)
+        override_applied = config_dict['date_range'].copy()
     
     # Setup logging
     setup_logging(level=config.get('log_level', 'INFO'))
+    if override_applied:
+        logger.info(
+            "Date range overridden via runtime arguments: %s",
+            override_applied
+        )
     logger.info("=" * 80)
     logger.info("Hospital Anomalies Detection Pipeline")
     logger.info("=" * 80)
@@ -61,7 +76,7 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     
     # Step 4: Feature engineering
     logger.info("\n[Step 4/6] Engineering features...")
-    features_df = engineer_features(combined_df, config_dict)
+    features_df = build_features(combined_df, config_dict)
     
     # Save features if configured
     if config_dict.get('output', {}).get('save_features', True):
@@ -112,6 +127,19 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     # Save top anomalies
     if config_dict.get('output', {}).get('save_predictions', True):
         save_results_summary(eval_results['top_anomalies'], config_dict)
+    
+    # Save all anomaly dates to a separate file
+    if config_dict.get('output', {}).get('save_anomaly_dates', True):
+        if 'anomaly_dates' in eval_results and len(eval_results['anomaly_dates']) > 0:
+            anomaly_dates_path = get_output_path(config_dict, 'results', 'anomaly_dates.csv')
+            save_csv(eval_results['anomaly_dates'], anomaly_dates_path)
+            logger.info(f"Saved {len(eval_results['anomaly_dates'])} anomaly dates to {anomaly_dates_path}")
+            
+            # Print anomaly dates table to console
+            print_anomaly_dates_table(
+                eval_results['anomaly_dates'],
+                max_rows=config_dict.get('evaluation', {}).get('print_top_anomalies', 20)
+            )
     
     # Create visualizations
     if config_dict.get('output', {}).get('save_figures', True):

@@ -3,6 +3,7 @@ Command-line interface for the hospital anomalies case study.
 """
 
 import argparse
+from datetime import datetime
 from pathlib import Path
 import sys
 
@@ -12,6 +13,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from case_studies.hospital_anomalies.src.pipeline import run_pipeline
 from case_studies.hospital_anomalies.src.ingest import ingest_cihi_data
 from case_studies.hospital_anomalies.src.utils import setup_logging, get_logger, load_config
+
+
+def _parse_iso_date(value: str):
+    """Parse CLI date arguments as YYYY-MM-DD."""
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"Invalid date '{value}'. Expected format YYYY-MM-DD."
+        ) from exc
 
 
 def main():
@@ -40,6 +51,18 @@ def main():
         default='INFO',
         help='Logging level (default: INFO)'
     )
+
+    parser.add_argument(
+        '--start-date',
+        type=_parse_iso_date,
+        help='Override the configuration start date (YYYY-MM-DD, run command only)'
+    )
+
+    parser.add_argument(
+        '--end-date',
+        type=_parse_iso_date,
+        help='Override the configuration end date (YYYY-MM-DD, run command only)'
+    )
     
     args = parser.parse_args()
     
@@ -54,9 +77,31 @@ def main():
             logger.error(f"Configuration file not found: {config_path}")
             sys.exit(1)
         
+        date_range_override = {}
+        if args.start_date:
+            date_range_override['start'] = args.start_date.isoformat()
+        if args.end_date:
+            date_range_override['end'] = args.end_date.isoformat()
+
+        if args.start_date and args.end_date and args.start_date > args.end_date:
+            logger.error("Start date must be on or before end date.")
+            sys.exit(1)
+
+        if args.command != 'run' and date_range_override:
+            logger.warning("Date range overrides are ignored for the ingest command.")
+            date_range_override = {}
+
         if args.command == 'run':
             logger.info(f"Running pipeline with config: {config_path}")
-            results = run_pipeline(config_path)
+            if date_range_override:
+                logger.info(
+                    "Applying date range override: %s",
+                    date_range_override
+                )
+            results = run_pipeline(
+                config_path,
+                date_range_override=date_range_override or None
+            )
             logger.info("Pipeline completed successfully!")
         
         elif args.command == 'ingest':

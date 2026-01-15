@@ -23,10 +23,12 @@ def plot_time_series_with_anomalies(
     value_col: str,
     anomaly_col: str,
     title: Optional[str] = None,
-    save_path: Optional[Path] = None
+    save_path: Optional[Path] = None,
+    annotate_dates: bool = True,
+    max_annotations: int = 10
 ) -> plt.Figure:
     """
-    Plot time series with anomaly overlays.
+    Plot time series with anomaly overlays and date annotations.
     
     Args:
         df: DataFrame with time series and anomalies
@@ -35,6 +37,8 @@ def plot_time_series_with_anomalies(
         anomaly_col: Name of anomaly indicator column
         title: Optional plot title
         save_path: Optional path to save figure
+        annotate_dates: Whether to annotate anomaly points with dates
+        max_annotations: Maximum number of anomalies to annotate (to avoid clutter)
     
     Returns:
         Matplotlib figure
@@ -45,17 +49,44 @@ def plot_time_series_with_anomalies(
     ax.plot(df[date_col], df[value_col], label='Values', linewidth=1.5, alpha=0.7)
     
     # Highlight anomalies
-    anomalies = df[df[anomaly_col]]
+    anomalies = df[df[anomaly_col]].copy()
     if len(anomalies) > 0:
         ax.scatter(
             anomalies[date_col],
             anomalies[value_col],
             color='red',
             s=50,
-            label='Anomalies',
+            label=f'Anomalies ({len(anomalies)})',
             zorder=5,
             alpha=0.6
         )
+        
+        # Annotate anomaly dates if requested
+        if annotate_dates and len(anomalies) > 0:
+            # Limit number of annotations to avoid clutter
+            n_annotate = min(len(anomalies), max_annotations)
+            
+            # Get top anomalies by score if available, otherwise use first N
+            if 'anomaly_score' in anomalies.columns:
+                anomalies_to_annotate = anomalies.nsmallest(n_annotate, 'anomaly_score')
+            else:
+                anomalies_to_annotate = anomalies.head(n_annotate)
+            
+            # Add annotations with dates
+            for idx, row in anomalies_to_annotate.iterrows():
+                date_str = pd.to_datetime(row[date_col]).strftime('%Y-%m-%d')
+                ax.annotate(
+                    date_str,
+                    xy=(row[date_col], row[value_col]),
+                    xytext=(10, 10),
+                    textcoords='offset points',
+                    fontsize=8,
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7),
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color='red', lw=0.5)
+                )
+            
+            if len(anomalies) > max_annotations:
+                logger.info(f"Annotated {n_annotate} of {len(anomalies)} anomalies on plot")
     
     ax.set_xlabel('Date')
     ax.set_ylabel(value_col)

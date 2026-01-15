@@ -152,6 +152,97 @@ def create_difference_features(
     return df
 
 
+def handle_missing_values(
+    df: pd.DataFrame,
+    method: str = 'ffill',
+    fill_value: float = 0.0
+) -> pd.DataFrame:
+    """
+    Handle missing values in feature matrix deterministically.
+    
+    Args:
+        df: DataFrame with potential missing values
+        method: Method for handling NaNs ('ffill', 'bfill', 'zero', 'mean', 'drop')
+        fill_value: Value to use for 'zero' method
+    
+    Returns:
+        DataFrame with missing values handled
+    """
+    df = df.copy()
+    
+    if method == 'ffill':
+        # Forward fill, then fill remaining NaNs with zeros
+        df = df.ffill().fillna(fill_value)
+    elif method == 'bfill':
+        # Backward fill, then fill remaining NaNs with zeros
+        df = df.bfill().fillna(fill_value)
+    elif method == 'zero':
+        # Fill with specified value (default 0)
+        df = df.fillna(fill_value)
+    elif method == 'mean':
+        # Fill with column means
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
+    elif method == 'drop':
+        # Drop rows with any NaN values
+        df = df.dropna()
+    else:
+        logger.warning(f"Unknown method '{method}', using 'ffill'")
+        df = df.ffill().fillna(fill_value)
+    
+    logger.info(f"Handled missing values using method: {method}")
+    logger.info(f"Remaining NaNs: {df.isna().sum().sum()}")
+    
+    return df
+
+
+def build_features(
+    df: pd.DataFrame,
+    config: Optional[dict] = None,
+    value_cols: Optional[List[str]] = None,
+    handle_nans: bool = True,
+    nan_method: str = 'ffill'
+) -> pd.DataFrame:
+    """
+    Build feature matrix from raw data with deterministic NaN handling.
+    
+    This is the main entry point for feature engineering. It applies all
+    feature transformations and ensures the output has no NaN values.
+    
+    Args:
+        df: DataFrame with raw data (must include 'date' column)
+        config: Configuration dictionary (if None, uses sensible defaults)
+        value_cols: Columns to create features for (auto-detect if None)
+        handle_nans: Whether to handle NaN values
+        nan_method: Method for handling NaNs ('ffill', 'bfill', 'zero', 'mean', 'drop')
+    
+    Returns:
+        DataFrame with engineered features and no NaN values
+    """
+    if config is None:
+        # Use sensible defaults
+        config = {
+            'features': {
+                'seasonal_features': True,
+                'rolling_windows': [3, 7],
+                'lag_features': [1, 7]
+            }
+        }
+    
+    # Apply feature engineering
+    df_features = engineer_features(df, config, value_cols)
+    
+    # Handle missing values
+    if handle_nans:
+        df_features = handle_missing_values(
+            df_features,
+            method=nan_method,
+            fill_value=0.0
+        )
+    
+    return df_features
+
+
 def engineer_features(
     df: pd.DataFrame,
     config: dict,
