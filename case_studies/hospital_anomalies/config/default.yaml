@@ -8,8 +8,8 @@ datasets:
 
 # Date Range for Analysis
 date_range:
-  start: "2019-01-01"
-  end: "2023-12-31"
+  start: "2015-01-01"
+  end: "2026-12-31"
 
 # Data Processing
 processing:

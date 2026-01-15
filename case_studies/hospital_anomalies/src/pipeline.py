@@ -4,7 +4,7 @@ Pipeline orchestration for the hospital anomalies case study.
 
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from .utils import setup_logging, get_logger, load_config
 
 from .ingest import ingest_cihi_data
@@ -18,12 +18,16 @@ from .io import save_results_summary, save_features, save_csv, ensure_output_dir
 logger = get_logger(__name__)
 
 
-def run_pipeline(config_path: Path) -> Dict[str, Any]:
+def run_pipeline(
+    config_path: Path,
+    date_range_override: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
     """
     Run the complete anomaly detection pipeline.
     
     Args:
         config_path: Path to configuration file
+        date_range_override: Optional mapping with 'start'/'end' ISO dates
     
     Returns:
         Dictionary with pipeline results
@@ -31,9 +35,20 @@ def run_pipeline(config_path: Path) -> Dict[str, Any]:
     # Load configuration
     config = load_config(config_path)
     config_dict = config.to_dict()
+
+    override_applied = None
+    if date_range_override:
+        config_dict.setdefault('date_range', {})
+        config_dict['date_range'].update(date_range_override)
+        override_applied = config_dict['date_range'].copy()
     
     # Setup logging
     setup_logging(level=config.get('log_level', 'INFO'))
+    if override_applied:
+        logger.info(
+            "Date range overridden via runtime arguments: %s",
+            override_applied
+        )
     logger.info("=" * 80)
     logger.info("Hospital Anomalies Detection Pipeline")
     logger.info("=" * 80)
